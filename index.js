@@ -5,57 +5,68 @@ const mongoose = require("mongoose")
 const jwt = require("jsonwebtoken")
 const passport = require("passport")
 const GoogleStrategy = require("passport-google-oauth2").Strategy
+const helmet = require("helmet")
+const rateLimit = require("express-rate-limit")
+const joi = require("joi")
+const sanitize = require("mongo-sanitize")
+const hpp = require("hpp")
+
 const app = express()
-const helmet = require(`helmet`)
-const rateLimit = require(`express-rate-limit`)
-const joi = require(`joi`)
-const sanitize = require(`mongo-sanitize`)
-const hpp = require('hpp');
-app.disable("x-powered-by");
-app.use(express.json({ limit: "10kb" }))
-app.use(hpp())
-app.use(passport.initialize()) 
-const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	limit: 3,
-	standardHeaders: 'draft-8', 
-	legacyHeaders: false, 
-	ipv6Subnet: 56, 
+
+app.disable("x-powered-by")
+app.use(express.json({ limit: "10kb" }))     
+app.use((req, res, next) => {                  
+    if (req.body) req.body = sanitize(req.body)
+    next()
 })
-app.use(sanitize())
-app.use(
-  helmet({
+app.use(hpp())                                 
+app.use(passport.initialize())                 
+app.use(helmet({                               
     xPoweredBy: false,
     contentSecurityPolicy: false,
     xDownloadOptions: false,
-  }),
-);
+}))
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 15,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    ipv6Subnet: 56,
+})
 
 const userSchema = new mongoose.Schema({
     userName: { type: String, required: true, unique: true },
     password: { type: String, required: function () { return !this.googleId } },
     googleId: { type: String, unique: true, sparse: true }
 })
+
+const User = mongoose.model("User", userSchema)
+
 const registerSchema = joi.object({
-    userName:joi.string().alphanum().min(3).max(30).required()
-    ,password:joi.string().alphanum().min(8).max(20).required()
+    userName: joi.string().alphanum().min(3).max(30).required(),
+    password: joi.string().alphanum().min(8).max(20).required()
 })
+
 const loginSchema = joi.object({
     userName: joi.string().required(),
     password: joi.string().required()
 })
+
 function validate(schema) {
     return (req, res, next) => {
+        if (!req.body) return res.status(400).json({ message: "Request body is missing" })
         const { error } = schema.validate(req.body)
         if (error) return res.status(400).json({ message: error.details[0].message })
         next()
     }
 }
-const User = mongoose.model("User", userSchema)
+
+// ── Passport Google strategy
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback", 
+    callbackURL: "http://localhost:3000/auth/google/callback",
     passReqToCallback: true
 },
     async function (request, accessToken, refreshToken, profile, done) {
@@ -89,7 +100,8 @@ passport.use(new GoogleStrategy({
 passport.serializeUser((user, done) => done(null, user))
 passport.deserializeUser((user, done) => done(null, user))
 
-let refreshTokens = [] 
+// JWT 
+let refreshTokens = []
 
 function generateAccessToken(user) {
     return jwt.sign(
@@ -110,16 +122,16 @@ function authenticateToken(req, res, next) {
     })
 }
 
+// Routes
 app.get("/", (req, res) => {
     res.send(`<a href="http://localhost:3000/auth/google">Login with Google</a>`)
 })
 
-app.post("/register", limiter ,validate(registerSchema), async (req, res) => {
+app.post("/register", limiter, validate(registerSchema), async (req, res) => {
     try {
         const { userName, password } = req.body
         const existingUser = await User.findOne({ userName })
         if (existingUser) return res.status(400).json({ message: "User already exists" })
-
         const hashedPassword = await bcrypt.hash(password, 10)
         const newUser = new User({ userName, password: hashedPassword })
         await newUser.save()
@@ -130,25 +142,28 @@ app.post("/register", limiter ,validate(registerSchema), async (req, res) => {
     }
 })
 
-app.post("/login",limiter,validate(loginSchema), async (req, res) => {
+const DUMMY_HASH = "$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+
+app.post("/login", limiter, validate(loginSchema), async (req, res) => {
     try {
         const { userName, password } = req.body
         const existingUser = await User.findOne({ userName })
-        if (!existingUser) return res.status(401).send("Username or password is incorrect")
 
+        const hashToCompare = existingUser ? existingUser.password : DUMMY_HASH
+        const isMatch = await bcrypt.compare(password, hashToCompare)
+
+        if (!existingUser || !isMatch) {
+            return res.status(401).send("Username or password is incorrect")
+        }
         if (existingUser.password === "google-auth-user") {
             return res.status(400).json({ message: "Please log in with Google" })
         }
 
-        const isMatch = await bcrypt.compare(password, existingUser.password)
-        if (!isMatch) return res.status(401).send("Username or password is incorrect")
-
         const accessToken = generateAccessToken(existingUser)
         const refreshToken = jwt.sign(
             { userName: existingUser.userName },
-            process.env.REFRESH_TOKEN_SECRET ,
+            process.env.REFRESH_TOKEN_SECRET,
             { expiresIn: "7d" }
-
         )
         refreshTokens.push(refreshToken)
         return res.status(200).json({ message: "Login Successfully", accessToken, refreshToken })
@@ -179,7 +194,7 @@ app.get("/auth/google",
     passport.authenticate("google", { scope: ["email", "profile"] })
 )
 
-app.get("/auth/google/callback",            
+app.get("/auth/google/callback",
     passport.authenticate("google", { session: false, failureRedirect: "/" }),
     (req, res) => {
         const accessToken = generateAccessToken(req.user)
