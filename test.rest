@@ -1,0 +1,37 @@
+### 1. Register a new user
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+    "userName": "testUser",
+    "password": "password123"
+}
+
+###
+
+### 2. Login (Get your tokens)
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "userName": "testUser",
+    "password": "password123"
+}
+
+###
+
+### 3. Access a Protected Route
+# Replace the text after 'Bearer' with your actual accesToken
+GET http://localhost:3000/protected-route
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3RVc2VyIiwiaWF0IjoxNzc4MDgwNzk1LCJleHAiOjE3NzgwODE2OTV9.dGYqZPQ5SZs2suApwYzBo9ItDvU1m4cuDM6G2YIvNAo
+
+###
+
+### 4. Refresh the Access Token
+# Replace the value of "token" with your actual refreshToken
+POST http://localhost:3000/token
+Content-Type: application/json
+
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3RVc2VyIiwiaWF0IjoxNzc4MDgwNzk1fQ.SZ4Qm30V6sSru78MKimpxx7VqMcQ_T0HC6_GD-R9Yao"
+}
