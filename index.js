@@ -10,8 +10,13 @@ const rateLimit = require("express-rate-limit")
 const joi = require("joi")
 const sanitize = require("mongo-sanitize")
 const hpp = require("hpp")
-
+const https = require('https');
+const fs = require(`fs`)
 const app = express()
+const options = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+};
 
 app.disable("x-powered-by")
 app.use(express.json({ limit: "10kb" }))     
@@ -66,7 +71,7 @@ function validate(schema) {
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback",
+    callbackURL: "https://localhost:3000/auth/google/callback",
     passReqToCallback: true
 },
     async function (request, accessToken, refreshToken, profile, done) {
@@ -124,7 +129,7 @@ function authenticateToken(req, res, next) {
 
 // Routes
 app.get("/", (req, res) => {
-    res.send(`<a href="http://localhost:3000/auth/google">Login with Google</a>`)
+    res.send(`<a href="https://localhost:3000/auth/google">Login with Google</a>`)
 })
 
 app.post("/register", limiter, validate(registerSchema), async (req, res) => {
@@ -215,6 +220,7 @@ app.get("/jwt", authenticateToken, (req, res) => {
 mongoose.connect(process.env.MONGO_URL)
     .then(() => {
         console.log("Database connected successfully")
-        app.listen(3000, () => console.log("Server listening on port 3000"))
-    })
-    .catch(err => console.log("Server Error", err))
+        https.createServer(options, app).listen(3000, () => {
+        console.log('HTTPS Server running on https://localhost:3000');
+})
+}).catch(err => console.log("Server Error", err))
