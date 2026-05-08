@@ -37,16 +37,20 @@ ACCESS_TOKEN_SECRET=your_jwt_access_secret
 REFRESH_TOKEN_SECRET=your_jwt_refresh_secret
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-
+```
 Clone the repo:
+```
 git clone [https://github.com/giorgi-bezhiashvili/Register-and-login.git](https://github.com/giorgi-bezhiashvili/Register-and-login.git)
 cd Register-and-login
-
+```
 Install dependencies:
+```
 npm install
-
+```
 SSL Setup (Development):
+```
 openssl req -nodes -new -x509 -keyout key.pem -out cert.pem
-
+```
 run:
+```
 npm run devStart
