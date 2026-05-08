@@ -54,3 +54,8 @@ openssl req -nodes -new -x509 -keyout key.pem -out cert.pem
 run:
 ```
 npm run devStart
+
+```
+⚠️ Important Note
+
+The current implementation stores refreshTokens in a local array. For a production environment, it is highly recommended to migrate these to a Redis store or a database collection to ensure tokens persist through server restarts.
