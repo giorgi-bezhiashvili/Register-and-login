@@ -1,37 +1,63 @@
-### 1. Register a new user
+### Register
 POST http://localhost:3000/register
 Content-Type: application/json
 
 {
-    "userName": "testUser",
-    "password": "password123"
+    "userName": "testuser",
+    "password": "testpassword123"
 }
 
-###
-
-### 2. Login (Get your tokens)
+### Login
 POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-    "userName": "testUser",
-    "password": "password123"
+    "userName": "testuser",
+    "password": "testpassword123"
 }
 
-###
+### Access Protected Route (paste accessToken from login response)
+GET http://localhost:3000/jwt
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc4MjI2ODc1LCJleHAiOjE3NzgyMjc3NzV9.Z-ZcrlGrVDTmZaKmAUA1KsgtgQd0-awOV06ogb0WFmk
 
-### 3. Access a Protected Route
-# Replace the text after 'Bearer' with your actual accesToken
-GET http://localhost:3000/protected-route
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3RVc2VyIiwiaWF0IjoxNzc4MDgwNzk1LCJleHAiOjE3NzgwODE2OTV9.dGYqZPQ5SZs2suApwYzBo9ItDvU1m4cuDM6G2YIvNAo
-
-###
-
-### 4. Refresh the Access Token
-# Replace the value of "token" with your actual refreshToken
+### Refresh Token (paste refreshToken from login response)
 POST http://localhost:3000/token
 Content-Type: application/json
 
 {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3RVc2VyIiwiaWF0IjoxNzc4MDgwNzk1fQ.SZ4Qm30V6sSru78MKimpxx7VqMcQ_T0HC6_GD-R9Yao"
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc4MjI2OTAzfQ.PdJHR5PdBZgF_RObUHAx0IxFYwD7vchas8JJvywLsik"
+}
+
+### Access Protected Route with new accessToken (paste token from /token response)
+GET http://localhost:3000/jwt
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6Imdpb3JnaWJlemhpYXNodmlsaTVAZ21haWwuY29tIiwiaWF0IjoxNzc4MjI3MDIzLCJleHAiOjE3NzgyMjc5MjN9.Ao4oOkWMxfpMmaHDYWOMzUEFmKAC6Qk521dlzNj2mi4
+
+### Logout 
+DELETE http://localhost:3000/logout
+Content-Type: application/json
+
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc4MjI2OTAzfQ.PdJHR5PdBZgF_RObUHAx0IxFYwD7vchas8JJvywLsik"
+}
+
+### Try protected route after logout (should still work until accessToken expires)
+GET http://localhost:3000/jwt
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNzc4MjI2OTE3LCJleHAiOjE3NzgyMjc4MTd9.dIuvVyWUMRtp7Vwox5O7VT7QeyWrlLVDFiguBYKp0GI
+
+### Try to register already existing user 
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+    "userName": "testuser",
+    "password": "testpassword123"
+}
+
+### Try login with wrong password 
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "userName": "testuser",
+    "password": "wrongpassword"
 }
