@@ -40,7 +40,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 Clone the repo:
 ```
-git clone [https://github.com/giorgi-bezhiashvili/Register-and-login.git](https://github.com/giorgi-bezhiashvili/Register-and-login.git)
+git clone https://github.com/giorgi-bezhiashvili/Register-and-login.git](https://github.com/giorgi-bezhiashvili/Register-and-login.git
 cd Register-and-login
 ```
 Install dependencies:
